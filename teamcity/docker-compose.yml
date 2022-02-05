@@ -1,0 +1,42 @@
+version: '3'
+services:
+  teamcity-server:
+    image: "jetbrains/teamcity-server"
+    ports:
+      - "8111:8111"
+    volumes:
+      - /home/projects/teamcity/datadir:/data/teamcity_server/datadir
+      - /home/projects/teamcity/logs:/opt/teamcity/logs
+    restart: always
+    networks:
+      - teamcity-network
+    depends_on:
+      - mysql
+
+  mysql:
+    image: "mysql:latest"
+    ports:
+      - "3307:3306"
+    volumes:
+      - /home/projects/teamcity/mysql/conf:/etc/mysql/conf.d
+      - /home/projects/teamcity/mysql/datadir:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=SuperStrictPassword
+    restart: always
+    networks:
+      - teamcity-network
+
+  teamcity-agent:
+    image: jetbrains/teamcity-agent
+    privileged: true    
+    restart: always
+    volumes:
+      - /home/projects/teamcity/agent-conf:/data/teamcity_agent/conf
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - SERVER_URL=teamcity-server:8111
+    networks:
+      - teamcity-network
+
+networks:
+  teamcity-network:
